@@ -8,7 +8,10 @@ defmodule CashierTest do
 
   @gr1_price 311
   @sr1_price 500
+  @sr1_discount_price 450
   @cf1_price 1123
+  @cf1_discount_percent 2 / 3
+  @cf1_discount_price @cf1_price * @cf1_discount_percent
 
   setup :prices
   setup :discounts
@@ -17,8 +20,8 @@ defmodule CashierTest do
     # One type of discount per product.
     Cashier.Discounts.register(%{
       "GR1" => {:buy_n_get_m, {1, 1}},
-      "SR1" => {:bulk_n_fixed_price, {3, 450}},
-      "CF1" => {:bulk_n_percent, {3, 2 / 3}}
+      "SR1" => {:bulk_n_fixed_price, {3, @sr1_discount_price}},
+      "CF1" => {:bulk_n_percent, {3, @cf1_discount_percent}}
     })
 
     :ok
@@ -71,11 +74,27 @@ defmodule CashierTest do
   end
 
   test "Bulk discount to fixed price" do
-    assert false
+    assert 1 * @sr1_price == Cashier.calculate_basket_price(["SR1"])
+    assert 2 * @sr1_price == Cashier.calculate_basket_price(["SR1", "SR1"])
+    assert 3 * @sr1_discount_price == Cashier.calculate_basket_price(["SR1", "SR1", "SR1"])
+
+    assert 4 * @sr1_discount_price ==
+             Cashier.calculate_basket_price(["SR1", "SR1", "SR1", "SR1"])
+
+    assert 5 * @sr1_discount_price ==
+             Cashier.calculate_basket_price(["SR1", "SR1", "SR1", "SR1", "SR1"])
   end
 
   test "Bulk discount to percentage" do
-    assert false
+    assert 1 * @cf1_price == Cashier.calculate_basket_price(["CF1"])
+    assert 2 * @cf1_price == Cashier.calculate_basket_price(["CF1", "CF1"])
+    assert 3 * @cf1_discount_price == Cashier.calculate_basket_price(["CF1", "CF1", "CF1"])
+
+    assert 4 * @cf1_discount_price ==
+             Cashier.calculate_basket_price(["CF1", "CF1", "CF1", "CF1"])
+
+    assert 5 * @cf1_discount_price ==
+             Cashier.calculate_basket_price(["CF1", "CF1", "CF1", "CF1", "CF1"])
   end
 
   test "Order of products does not matter in final price" do
